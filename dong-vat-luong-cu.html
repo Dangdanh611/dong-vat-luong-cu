@@ -1,0 +1,1526 @@
+<!-- ==========================================
+     TRANSLATE WIDGET - Dịch Ngôn Ngữ Popup
+     Thêm đoạn code này vào trước thẻ </body>
+     ========================================== -->
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap');
+
+  #tw-root * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  /* --- Floating Button --- */
+  #tw-fab {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    z-index: 99999;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: linear-gradient(135deg, #1a73e8, #0d47a1);
+    box-shadow: 0 4px 20px rgba(26,115,232,0.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.25s cubic-bezier(.34,1.56,.64,1), box-shadow 0.25s;
+    outline: none;
+  }
+  #tw-fab:hover {
+    transform: scale(1.1) rotate(-5deg);
+    box-shadow: 0 6px 28px rgba(26,115,232,0.6);
+  }
+  #tw-fab svg { width: 26px; height: 26px; fill: #fff; transition: transform 0.3s; }
+  #tw-fab.active { background: linear-gradient(135deg, #0d47a1, #1a73e8); }
+  #tw-fab.active svg { transform: rotate(180deg); }
+
+  /* Pulse ring */
+  #tw-fab::after {
+    content: '';
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 50%;
+    border: 2px solid rgba(26,115,232,0.5);
+    animation: tw-pulse 2s ease-out infinite;
+  }
+  @keyframes tw-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  /* --- Popup Panel --- */
+  #tw-panel {
+    position: fixed;
+    bottom: 96px;
+    right: 28px;
+    z-index: 99998;
+    width: 340px;
+    background: #fff;
+    border-radius: 20px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.18), 0 1.5px 6px rgba(0,0,0,0.08);
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    overflow: hidden;
+    transform: scale(0.85) translateY(20px);
+    transform-origin: bottom right;
+    opacity: 0;
+    pointer-events: none;
+    transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.25s ease;
+  }
+  #tw-panel.open {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+    pointer-events: all;
+  }
+
+  /* Header */
+  #tw-header {
+    background: linear-gradient(135deg, #1a73e8 0%, #0d47a1 100%);
+    padding: 18px 20px 14px;
+    color: #fff;
+  }
+  #tw-header-top {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 4px;
+  }
+  #tw-header-top svg { width: 22px; height: 22px; fill: rgba(255,255,255,0.9); flex-shrink: 0; }
+  #tw-title {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: -0.2px;
+    color: #fff;
+  }
+  #tw-subtitle {
+    font-size: 11.5px;
+    color: rgba(255,255,255,0.72);
+    padding-left: 32px;
+    line-height: 1.4;
+  }
+
+  /* Body */
+  #tw-body { padding: 16px 18px 18px; }
+
+  /* Lang row */
+  .tw-lang-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .tw-lang-box {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+  .tw-lang-label {
+    font-size: 10.5px;
+    font-weight: 600;
+    color: #9aa0a6;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+  }
+  .tw-lang-select {
+    width: 100%;
+    padding: 9px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #202124;
+    background: #f8f9fa;
+    outline: none;
+    cursor: pointer;
+    transition: border-color 0.2s, background 0.2s;
+    appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='%239aa0a6'%3E%3Cpath d='M7 10l5 5 5-5z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    padding-right: 30px;
+  }
+  .tw-lang-select:focus { border-color: #1a73e8; background: #fff; }
+
+  /* Swap button */
+  #tw-swap {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    border: 1.5px solid #e0e0e0;
+    background: #fff;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    margin-top: 18px;
+    transition: background 0.2s, border-color 0.2s, transform 0.3s;
+    outline: none;
+  }
+  #tw-swap:hover { background: #e8f0fe; border-color: #1a73e8; transform: rotate(180deg); }
+  #tw-swap svg { width: 16px; height: 16px; fill: #5f6368; }
+  #tw-swap:hover svg { fill: #1a73e8; }
+
+  /* Translate button */
+  #tw-translate-btn {
+    width: 100%;
+    padding: 12px;
+    background: linear-gradient(135deg, #1a73e8, #1557b0);
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: opacity 0.2s, transform 0.15s;
+    outline: none;
+    letter-spacing: -0.1px;
+  }
+  #tw-translate-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+  #tw-translate-btn:active { transform: translateY(0); opacity: 1; }
+  #tw-translate-btn svg { width: 18px; height: 18px; fill: #fff; }
+
+  /* Status bar */
+  #tw-status {
+    margin-top: 12px;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-size: 12.5px;
+    font-weight: 500;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    line-height: 1.4;
+  }
+  #tw-status.info { background: #e8f0fe; color: #1a73e8; display: flex; }
+  #tw-status.success { background: #e6f4ea; color: #137333; display: flex; }
+  #tw-status.error { background: #fce8e6; color: #c5221f; display: flex; }
+  #tw-status.loading { background: #f1f3f4; color: #5f6368; display: flex; }
+
+  /* Restore button */
+  #tw-restore-btn {
+    width: 100%;
+    margin-top: 8px;
+    padding: 9px;
+    background: transparent;
+    color: #5f6368;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 10px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.2s;
+    outline: none;
+  }
+  #tw-restore-btn:hover { background: #f1f3f4; border-color: #bdc1c6; color: #202124; }
+  #tw-restore-btn svg { width: 14px; height: 14px; fill: currentColor; }
+
+  /* Spinner */
+  .tw-spinner {
+    width: 14px; height: 14px;
+    border: 2px solid rgba(26,115,232,0.3);
+    border-top-color: #1a73e8;
+    border-radius: 50%;
+    animation: tw-spin 0.7s linear infinite;
+    flex-shrink: 0;
+  }
+  @keyframes tw-spin { to { transform: rotate(360deg); } }
+
+  /* Divider */
+  .tw-divider {
+    height: 1px;
+    background: #f1f3f4;
+    margin: 14px 0;
+  }
+
+  /* Footer */
+  #tw-footer {
+    padding: 0 18px 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: #9aa0a6;
+    font-size: 11px;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+  }
+  #tw-footer svg { width: 13px; height: 13px; fill: #9aa0a6; }
+
+  /* Dark overlay on mobile */
+  @media (max-width: 400px) {
+    #tw-panel { width: calc(100vw - 32px); right: 16px; bottom: 84px; }
+    #tw-fab { right: 16px; bottom: 16px; }
+  }
+</style>
+
+<div id="tw-root">
+  <!-- FAB Button -->
+  <button id="tw-fab" title="Dịch trang">
+    <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/>
+    </svg>
+  </button>
+
+  <!-- Popup Panel -->
+  <div id="tw-panel">
+    <!-- Header -->
+    <div id="tw-header">
+      <div id="tw-header-top">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        <span id="tw-title">Dịch Trang</span>
+      </div>
+      <div id="tw-subtitle">Dịch nội dung trang sang ngôn ngữ khác</div>
+    </div>
+
+    <!-- Body -->
+    <div id="tw-body">
+      <div class="tw-lang-row">
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Ngôn ngữ gốc</span>
+          <select class="tw-lang-select" id="tw-src-lang">
+            <option value="auto">🌐 Tự động nhận diện</option>
+            <option value="vi" selected>🇻🇳 Tiếng Việt</option>
+            <option value="en">🇺🇸 English</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+
+        <button id="tw-swap" title="Hoán đổi ngôn ngữ">
+          <svg viewBox="0 0 24 24"><path d="M6.99 11L3 15l3.99 4v-3H14v-2H6.99v-3zM21 9l-3.99-4v3H10v2h7.01v3L21 9z"/></svg>
+        </button>
+
+        <div class="tw-lang-box">
+          <span class="tw-lang-label">Dịch sang</span>
+          <select class="tw-lang-select" id="tw-dest-lang">
+            <option value="en" selected>🇺🇸 English</option>
+            <option value="vi">🇻🇳 Tiếng Việt</option>
+            <option value="zh-CN">🇨🇳 中文 (Giản thể)</option>
+            <option value="zh-TW">🇹🇼 中文 (Phồn thể)</option>
+            <option value="ja">🇯🇵 日本語</option>
+            <option value="ko">🇰🇷 한국어</option>
+            <option value="fr">🇫🇷 Français</option>
+            <option value="de">🇩🇪 Deutsch</option>
+            <option value="es">🇪🇸 Español</option>
+            <option value="it">🇮🇹 Italiano</option>
+            <option value="pt">🇵🇹 Português</option>
+            <option value="ru">🇷🇺 Русский</option>
+            <option value="ar">🇸🇦 العربية</option>
+            <option value="th">🇹🇭 ภาษาไทย</option>
+            <option value="id">🇮🇩 Bahasa Indonesia</option>
+          </select>
+        </div>
+      </div>
+
+      <button id="tw-translate-btn">
+        <svg viewBox="0 0 24 24"><path d="M12.87 15.07l-2.54-2.51.03-.03A17.52 17.52 0 0014.07 6H17V4h-7V2H8v2H1v2h11.17C11.5 7.92 10.44 9.75 9 11.35 8.07 10.32 7.3 9.19 6.69 8h-2c.73 1.63 1.73 3.17 2.98 4.56l-5.09 5.02L4 19l5-5 3.11 3.11.76-2.04zM18.5 10h-2L12 22h2l1.12-3h4.75L21 22h2l-4.5-12zm-2.62 7l1.62-4.33L19.12 17h-3.24z"/></svg>
+        Dịch trang ngay
+      </button>
+
+      <div id="tw-status"></div>
+
+      <button id="tw-restore-btn">
+        <svg viewBox="0 0 24 24"><path d="M13 3a9 9 0 1 0 9 9h-2a7 7 0 1 1-7-7v4l5-5-5-5v4z"/></svg>
+        Khôi phục bản gốc
+      </button>
+    </div>
+
+    <div class="tw-divider"></div>
+
+    <div id="tw-footer">
+      <svg viewBox="0 0 24 24"><path d="M11.99 2C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zm6.93 6h-2.95a15.65 15.65 0 0 0-1.38-3.56A8.03 8.03 0 0 1 18.92 8zM12 4.04c.83 1.2 1.48 2.53 1.91 3.96h-3.82c.43-1.43 1.08-2.76 1.91-3.96zM4.26 14C4.1 13.36 4 12.69 4 12s.1-1.36.26-2h3.38c-.08.66-.14 1.32-.14 2s.06 1.34.14 2H4.26zm.82 2h2.95c.32 1.25.78 2.45 1.38 3.56A7.987 7.987 0 0 1 5.08 16zm2.95-8H5.08a7.987 7.987 0 0 1 4.33-3.56A15.65 15.65 0 0 0 8.03 8zM12 19.96c-.83-1.2-1.48-2.53-1.91-3.96h3.82c-.43 1.43-1.08 2.76-1.91 3.96zM14.34 14H9.66c-.09-.66-.16-1.32-.16-2s.07-1.35.16-2h4.68c.09.65.16 1.32.16 2s-.07 1.34-.16 2zm.25 5.56c.6-1.11 1.06-2.31 1.38-3.56h2.95a8.03 8.03 0 0 1-4.33 3.56zM16.36 14c.08-.66.14-1.32.14-2s-.06-1.34-.14-2h3.38c.16.64.26 1.31.26 2s-.1 1.36-.26 2h-3.38z"/></svg>
+      Hỗ trợ bởi Google Translate
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  const fab = document.getElementById('tw-fab');
+  const panel = document.getElementById('tw-panel');
+  const translateBtn = document.getElementById('tw-translate-btn');
+  const restoreBtn = document.getElementById('tw-restore-btn');
+  const statusEl = document.getElementById('tw-status');
+  const srcLang = document.getElementById('tw-src-lang');
+  const destLang = document.getElementById('tw-dest-lang');
+  const swapBtn = document.getElementById('tw-swap');
+
+  let isTranslated = false;
+  let originalTexts = []; // { node, original }
+  let isLoading = false;
+
+  // === Toggle panel ===
+  fab.addEventListener('click', () => {
+    const isOpen = panel.classList.contains('open');
+    panel.classList.toggle('open');
+    fab.classList.toggle('active');
+    if (!isOpen) setStatus('info', '🌐 Chọn ngôn ngữ và nhấn Dịch trang ngay');
+  });
+
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!document.getElementById('tw-root').contains(e.target)) {
+      panel.classList.remove('open');
+      fab.classList.remove('active');
+    }
+  });
+
+  // === Swap languages ===
+  swapBtn.addEventListener('click', () => {
+    const s = srcLang.value === 'auto' ? destLang.value : srcLang.value;
+    const d = srcLang.value === 'auto' ? 'vi' : destLang.value;
+    // Only swap if src is not auto
+    if (srcLang.value !== 'auto') {
+      const tmp = srcLang.value;
+      srcLang.value = destLang.value;
+      destLang.value = tmp;
+    }
+  });
+
+  // === Status helper ===
+  function setStatus(type, msg, spinner = false) {
+    statusEl.className = 'tw-status ' + type;
+    statusEl.innerHTML = spinner
+      ? `<div class="tw-spinner"></div><span>${msg}</span>`
+      : `<span>${msg}</span>`;
+    statusEl.style.display = 'flex';
+  }
+  function hideStatus() { statusEl.style.display = 'none'; }
+
+  // === Get all visible text nodes ===
+  function getTextNodes(root) {
+    const walker = document.createTreeWalker(
+      root,
+      NodeFilter.SHOW_TEXT,
+      {
+        acceptNode(node) {
+          const parent = node.parentElement;
+          if (!parent) return NodeFilter.FILTER_REJECT;
+          const tag = parent.tagName.toUpperCase();
+          // Skip script, style, noscript, tw-root
+          if (['SCRIPT','STYLE','NOSCRIPT','TEXTAREA','INPUT'].includes(tag)) return NodeFilter.FILTER_REJECT;
+          if (parent.closest('#tw-root')) return NodeFilter.FILTER_REJECT;
+          if (node.textContent.trim().length < 2) return NodeFilter.FILTER_REJECT;
+          return NodeFilter.FILTER_ACCEPT;
+        }
+      }
+    );
+    const nodes = [];
+    let n;
+    while ((n = walker.nextNode())) nodes.push(n);
+    return nodes;
+  }
+
+  // === Chunk array ===
+  function chunk(arr, size) {
+    const res = [];
+    for (let i = 0; i < arr.length; i += size) res.push(arr.slice(i, i + size));
+    return res;
+  }
+
+  // === Translate a batch of texts via Google Translate (no key needed) ===
+  async function translateTexts(texts, src, dest) {
+    const joined = texts.join('\n\n||||\n\n');
+    const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${src}&tl=${dest}&dt=t&q=${encodeURIComponent(joined)}`;
+    const res = await fetch(url);
+    if (!res.ok) throw new Error('Lỗi kết nối API dịch');
+    const data = await res.json();
+    // Parse result
+    const translated = data[0].map(item => item[0]).join('');
+    return translated.split('\n\n||||\n\n');
+  }
+
+  // === Main translate ===
+  translateBtn.addEventListener('click', async () => {
+    if (isLoading) return;
+
+    const dest = destLang.value;
+    const src = srcLang.value;
+
+    if (src !== 'auto' && src === dest) {
+      setStatus('error', '⚠️ Ngôn ngữ gốc và đích không được giống nhau!');
+      return;
+    }
+
+    // Restore if already translated
+    if (isTranslated) restoreOriginal();
+
+    isLoading = true;
+    translateBtn.disabled = true;
+    setStatus('loading', 'Đang thu thập nội dung...', true);
+
+    try {
+      const textNodes = getTextNodes(document.body);
+      if (textNodes.length === 0) throw new Error('Không tìm thấy nội dung để dịch');
+
+      originalTexts = textNodes.map(n => ({ node: n, original: n.textContent }));
+      const texts = originalTexts.map(t => t.original.trim());
+
+      setStatus('loading', `Đang dịch ${texts.length} đoạn văn...`, true);
+
+      // Batch: 40 texts per request
+      const batches = chunk(texts, 40);
+      const results = [];
+
+      for (let i = 0; i < batches.length; i++) {
+        setStatus('loading', `Dịch batch ${i+1}/${batches.length}...`, true);
+        const translated = await translateTexts(batches[i], src, dest);
+        results.push(...translated);
+        if (i < batches.length - 1) await new Promise(r => setTimeout(r, 300));
+      }
+
+      // Apply translations
+      originalTexts.forEach((item, idx) => {
+        if (results[idx] !== undefined) {
+          item.node.textContent = results[idx];
+        }
+      });
+
+      isTranslated = true;
+      const destName = destLang.options[destLang.selectedIndex].text.replace(/^[^\s]+\s/, '');
+      setStatus('success', `✅ Đã dịch sang ${destName} thành công!`);
+      restoreBtn.style.display = 'flex';
+
+    } catch (err) {
+      console.error('Translate error:', err);
+      setStatus('error', `❌ ${err.message || 'Lỗi không xác định. Vui lòng thử lại.'}`);
+      restoreOriginal();
+    } finally {
+      isLoading = false;
+      translateBtn.disabled = false;
+    }
+  });
+
+  // === Restore ===
+  function restoreOriginal() {
+    originalTexts.forEach(({ node, original }) => {
+      try { node.textContent = original; } catch(e) {}
+    });
+    originalTexts = [];
+    isTranslated = false;
+    restoreBtn.style.display = 'none';
+  }
+
+  restoreBtn.addEventListener('click', () => {
+    restoreOriginal();
+    setStatus('info', '🔄 Đã khôi phục nội dung gốc');
+  });
+
+})();
+</script>
+<!-- ========================================== --><!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Động Vật Lưỡng Cư — Trên Bờ, Dưới Nước</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=Lora:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --green-deep: #1a3d2b;
+      --green-mid: #2e6b47;
+      --green-light: #5a9e6f;
+      --green-pale: #a8d5b5;
+      --teal: #3a8c7e;
+      --water: #1f5f73;
+      --water-light: #4a9daf;
+      --gold: #c8a44a;
+      --cream: #f5f0e8;
+      --paper: #faf7f2;
+      --ink: #1c1c1c;
+      --ink-soft: #3d3d3d;
+      --ink-muted: #6b6b6b;
+      --border: rgba(90,158,111,0.2);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    /* ── PROGRESS BAR ── */
+    #progress-bar {
+      position: fixed; top: 0; left: 0; height: 3px;
+      background: linear-gradient(90deg, var(--green-mid), var(--teal), var(--water-light));
+      width: 0%; z-index: 9999;
+      transition: width 0.1s linear;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 3px; left: 0; right: 0; z-index: 999;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 1rem 3rem;
+      background: rgba(250,247,242,0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      transition: box-shadow 0.3s;
+    }
+    nav.scrolled { box-shadow: 0 4px 30px rgba(30,80,50,0.1); }
+    .nav-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--green-deep);
+      letter-spacing: 0.02em;
+    }
+    .nav-logo span { color: var(--teal); }
+    .nav-links {
+      display: flex; gap: 2rem; list-style: none;
+    }
+    .nav-links a {
+      font-size: 0.82rem; font-weight: 500; letter-spacing: 0.06em;
+      text-transform: uppercase; color: var(--ink-muted);
+      text-decoration: none;
+      transition: color 0.25s;
+      position: relative;
+    }
+    .nav-links a::after {
+      content: ''; position: absolute; bottom: -3px; left: 0; right: 0; height: 1px;
+      background: var(--green-mid); transform: scaleX(0);
+      transition: transform 0.3s;
+    }
+    .nav-links a:hover { color: var(--green-mid); }
+    .nav-links a:hover::after { transform: scaleX(1); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      position: relative; overflow: hidden;
+      background: linear-gradient(160deg, var(--green-deep) 0%, #0d2a1e 40%, var(--water) 100%);
+    }
+    .hero-bg-shapes {
+      position: absolute; inset: 0; pointer-events: none;
+    }
+    .ripple {
+      position: absolute; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.06);
+      animation: rippleExpand 8s ease-out infinite;
+    }
+    .ripple:nth-child(1) { width: 300px; height: 300px; bottom: 5%; left: 10%; animation-delay: 0s; }
+    .ripple:nth-child(2) { width: 500px; height: 500px; bottom: -5%; left: 5%; animation-delay: 2s; }
+    .ripple:nth-child(3) { width: 700px; height: 700px; bottom: -15%; left: 0%; animation-delay: 4s; }
+    .ripple:nth-child(4) { width: 200px; height: 200px; top: 20%; right: 15%; animation-delay: 1s; }
+    .ripple:nth-child(5) { width: 400px; height: 400px; top: 10%; right: 10%; animation-delay: 3s; }
+    @keyframes rippleExpand {
+      0% { opacity: 0.4; transform: scale(0.8); }
+      100% { opacity: 0; transform: scale(1.4); }
+    }
+
+    /* floating particles */
+    .particle {
+      position: absolute; border-radius: 50%;
+      background: rgba(168,213,181,0.3);
+      animation: floatUp linear infinite;
+    }
+    @keyframes floatUp {
+      0% { opacity: 0; transform: translateY(0) scale(0); }
+      20% { opacity: 0.6; }
+      80% { opacity: 0.3; }
+      100% { opacity: 0; transform: translateY(-200px) scale(1); }
+    }
+
+    .hero-content {
+      position: relative; z-index: 2;
+      text-align: center; padding: 2rem;
+      max-width: 900px;
+    }
+    .hero-eyebrow {
+      font-size: 0.78rem; font-weight: 500; letter-spacing: 0.2em;
+      text-transform: uppercase; color: var(--green-pale);
+      margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeInUp 0.8s 0.3s forwards;
+    }
+    .hero-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(2.8rem, 7vw, 5.5rem);
+      font-weight: 900;
+      color: #fff;
+      line-height: 1.08;
+      margin-bottom: 1.5rem;
+      opacity: 0; animation: fadeInUp 0.9s 0.5s forwards;
+    }
+    .hero-title em {
+      font-style: italic;
+      color: var(--green-pale);
+      display: block;
+    }
+    .hero-subtitle {
+      font-family: 'Lora', serif;
+      font-size: 1.15rem; color: rgba(255,255,255,0.65);
+      line-height: 1.7; max-width: 600px; margin: 0 auto 2.5rem;
+      opacity: 0; animation: fadeInUp 0.9s 0.7s forwards;
+    }
+    .hero-divider {
+      display: flex; align-items: center; justify-content: center; gap: 1rem;
+      margin-bottom: 2rem;
+      opacity: 0; animation: fadeInUp 0.9s 0.9s forwards;
+    }
+    .hero-divider span {
+      width: 60px; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--green-pale));
+    }
+    .hero-divider span:last-child {
+      background: linear-gradient(90deg, var(--green-pale), transparent);
+    }
+    .hero-divider i { color: var(--green-pale); font-size: 1.2rem; }
+    .scroll-hint {
+      position: absolute; bottom: 2rem; left: 50%; transform: translateX(-50%);
+      display: flex; flex-direction: column; align-items: center; gap: 0.5rem;
+      color: rgba(255,255,255,0.4); font-size: 0.7rem; letter-spacing: 0.12em;
+      text-transform: uppercase;
+      animation: bounceY 2s ease-in-out infinite;
+    }
+    .scroll-hint svg { width: 20px; height: 20px; stroke: currentColor; fill: none; }
+    @keyframes bounceY {
+      0%, 100% { transform: translateX(-50%) translateY(0); }
+      50% { transform: translateX(-50%) translateY(8px); }
+    }
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── MAIN CONTENT ── */
+    main { max-width: 900px; margin: 0 auto; padding: 0 2rem; }
+
+    /* ── SECTIONS ── */
+    .section {
+      padding: 5rem 0;
+      border-bottom: 1px solid var(--border);
+      opacity: 0; transform: translateY(30px);
+      transition: opacity 0.7s ease, transform 0.7s ease;
+    }
+    .section.visible { opacity: 1; transform: translateY(0); }
+
+    .section-tag {
+      display: inline-block;
+      font-size: 0.7rem; font-weight: 500; letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--teal);
+      border: 1px solid rgba(58,140,126,0.35);
+      padding: 0.3rem 0.9rem; border-radius: 100px;
+      margin-bottom: 1.2rem;
+    }
+    .section-title {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700; color: var(--green-deep);
+      line-height: 1.2; margin-bottom: 1.5rem;
+    }
+    .section-title em { font-style: italic; color: var(--teal); }
+
+    p {
+      font-family: 'Lora', serif;
+      font-size: 1.05rem; line-height: 1.85;
+      color: var(--ink-soft);
+      margin-bottom: 1.2rem;
+    }
+
+    /* ── PULL QUOTE ── */
+    .pull-quote {
+      margin: 2.5rem 0;
+      padding: 1.8rem 2.5rem;
+      border-left: 3px solid var(--green-mid);
+      background: linear-gradient(135deg, rgba(90,158,111,0.05), rgba(58,140,126,0.05));
+      border-radius: 0 12px 12px 0;
+    }
+    .pull-quote p {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.25rem; font-style: italic;
+      color: var(--green-deep); line-height: 1.6; margin: 0;
+    }
+
+    /* ── INFO CARDS GRID ── */
+    .cards-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 1.5rem; margin: 2.5rem 0;
+    }
+    .card {
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 1.8rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+      cursor: default;
+    }
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 20px 50px rgba(30,80,50,0.1);
+    }
+    .card-icon {
+      font-size: 2rem; margin-bottom: 0.8rem;
+    }
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.1rem; font-weight: 700;
+      color: var(--green-deep); margin-bottom: 0.5rem;
+    }
+    .card p {
+      font-size: 0.9rem; line-height: 1.65; margin: 0;
+    }
+
+    /* ── SPECIES TABLE ── */
+    .species-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 1rem; margin: 2rem 0;
+    }
+    @media(max-width: 600px) { .species-grid { grid-template-columns: 1fr; } }
+    .species-card {
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.5rem;
+      position: relative; overflow: hidden;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .species-card::before {
+      content: ''; position: absolute; top: 0; left: 0; right: 0; height: 4px;
+    }
+    .species-card.frog::before { background: linear-gradient(90deg, var(--green-mid), var(--green-light)); }
+    .species-card.toad::before { background: linear-gradient(90deg, #7d5a3c, #a67c52); }
+    .species-card.salamander::before { background: linear-gradient(90deg, var(--teal), var(--water-light)); }
+    .species-card.caecilian::before { background: linear-gradient(90deg, #8e6bbf, #b09fd4); }
+    .species-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 16px 40px rgba(30,80,50,0.1);
+    }
+    .species-emoji { font-size: 2.5rem; margin-bottom: 0.6rem; }
+    .species-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.15rem; font-weight: 700; color: var(--green-deep);
+      margin-bottom: 0.3rem;
+    }
+    .species-latin { font-size: 0.78rem; font-style: italic; color: var(--ink-muted); margin-bottom: 0.6rem; }
+    .species-card p { font-size: 0.88rem; margin: 0; }
+
+    /* ── COMPARISON TABLE ── */
+    .compare-table {
+      width: 100%; border-collapse: collapse; margin: 2rem 0;
+      border-radius: 12px; overflow: hidden;
+      box-shadow: 0 4px 20px rgba(30,80,50,0.08);
+    }
+    .compare-table th {
+      background: var(--green-deep); color: #fff;
+      font-family: 'DM Sans', sans-serif; font-size: 0.82rem;
+      font-weight: 500; letter-spacing: 0.08em; text-transform: uppercase;
+      padding: 1rem 1.2rem; text-align: left;
+    }
+    .compare-table td {
+      font-family: 'Lora', serif; font-size: 0.9rem;
+      padding: 0.9rem 1.2rem; color: var(--ink-soft);
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+    }
+    .compare-table tr:hover td { background: rgba(90,158,111,0.04); }
+    .compare-table td:first-child { font-weight: 600; color: var(--green-deep); }
+
+    /* ── HABITAT SECTION ── */
+    .habitat-list {
+      list-style: none; margin: 1.5rem 0;
+    }
+    .habitat-list li {
+      display: flex; align-items: flex-start; gap: 1rem;
+      padding: 1rem 0;
+      border-bottom: 1px solid var(--border);
+      font-family: 'Lora', serif; font-size: 0.95rem;
+      color: var(--ink-soft); line-height: 1.7;
+    }
+    .habitat-list li:last-child { border-bottom: none; }
+    .habitat-list .hab-icon {
+      font-size: 1.5rem; flex-shrink: 0; margin-top: 0.1rem;
+    }
+    .habitat-list strong { color: var(--green-deep); display: block; font-family: 'DM Sans', sans-serif; font-size: 0.95rem; margin-bottom: 0.2rem; }
+
+    /* ── THREAT TIMELINE ── */
+    .timeline {
+      position: relative; margin: 2rem 0; padding-left: 2rem;
+    }
+    .timeline::before {
+      content: ''; position: absolute; left: 0; top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(180deg, var(--green-mid), var(--teal), var(--water));
+    }
+    .timeline-item {
+      position: relative; margin-bottom: 2rem;
+      padding-left: 1.5rem;
+    }
+    .timeline-dot {
+      position: absolute; left: -2.5rem; top: 0.4rem;
+      width: 12px; height: 12px; border-radius: 50%;
+      background: var(--green-mid);
+      border: 3px solid var(--paper);
+      box-shadow: 0 0 0 2px var(--green-mid);
+    }
+    .timeline-label {
+      font-size: 0.72rem; font-weight: 600; letter-spacing: 0.12em;
+      text-transform: uppercase; color: var(--teal); margin-bottom: 0.3rem;
+    }
+    .timeline-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1rem; font-weight: 700; color: var(--green-deep); margin-bottom: 0.4rem;
+    }
+    .timeline-item p { font-size: 0.9rem; margin: 0; }
+
+    /* ── FACT BOX ── */
+    .fact-box {
+      background: linear-gradient(135deg, var(--green-deep), var(--water));
+      border-radius: 20px; padding: 2.5rem;
+      margin: 2.5rem 0; color: #fff;
+    }
+    .fact-box-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.4rem; font-weight: 700; margin-bottom: 1.5rem;
+      color: var(--green-pale);
+    }
+    .fact-items { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
+    .fact-item { text-align: center; }
+    .fact-number {
+      font-family: 'Playfair Display', serif;
+      font-size: 2.5rem; font-weight: 900; color: var(--green-pale);
+      display: block; line-height: 1;
+    }
+    .fact-label { font-size: 0.82rem; color: rgba(255,255,255,0.7); margin-top: 0.3rem; }
+
+    /* ── IMPORTANCE SECTION ── */
+    .importance-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1.2rem; margin: 2rem 0;
+    }
+    .imp-card {
+      border-radius: 14px; padding: 1.6rem;
+      border: 1px solid var(--border);
+      background: #fff;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .imp-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(30,80,50,0.1); }
+    .imp-icon { font-size: 1.8rem; margin-bottom: 0.8rem; }
+    .imp-title {
+      font-family: 'DM Sans', sans-serif; font-weight: 600;
+      font-size: 0.95rem; color: var(--green-deep); margin-bottom: 0.5rem;
+    }
+    .imp-card p { font-size: 0.87rem; margin: 0; }
+
+    /* ── HOW TO IDENTIFY ── */
+    .id-grid {
+      display: grid; grid-template-columns: 1fr 1fr 1fr;
+      gap: 1rem; margin: 2rem 0;
+    }
+    @media(max-width:700px) { .id-grid { grid-template-columns: 1fr; } }
+    .id-card {
+      text-align: center; padding: 1.5rem 1rem;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: transform 0.3s;
+    }
+    .id-card:hover { transform: translateY(-4px); }
+    .id-emoji { font-size: 2.2rem; margin-bottom: 0.7rem; }
+    .id-feature {
+      font-family: 'DM Sans', sans-serif; font-weight: 600;
+      font-size: 0.9rem; color: var(--green-deep); margin-bottom: 0.4rem;
+    }
+    .id-card p { font-size: 0.82rem; margin: 0; }
+
+    /* ── CURIOSITY SECTION ── */
+    .curiosity-list {
+      display: flex; flex-direction: column; gap: 1.2rem; margin: 2rem 0;
+    }
+    .curiosity-item {
+      display: flex; gap: 1.2rem; align-items: flex-start;
+      background: #fff; border: 1px solid var(--border);
+      border-radius: 14px; padding: 1.4rem;
+      transition: transform 0.3s, box-shadow 0.3s;
+    }
+    .curiosity-item:hover { transform: translateX(6px); box-shadow: 0 8px 30px rgba(30,80,50,0.08); }
+    .curiosity-num {
+      font-family: 'Playfair Display', serif; font-size: 2rem; font-weight: 900;
+      color: var(--green-pale); line-height: 1; flex-shrink: 0; width: 2.5rem;
+    }
+    .curiosity-text h4 {
+      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 1rem;
+      color: var(--green-deep); margin-bottom: 0.3rem;
+    }
+    .curiosity-text p { font-size: 0.9rem; margin: 0; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: var(--green-deep);
+      padding: 3rem 2rem; text-align: center;
+      color: rgba(255,255,255,0.5);
+      font-size: 0.82rem; letter-spacing: 0.06em;
+    }
+    footer .ft-logo {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.6rem; font-weight: 700; color: var(--green-pale);
+      margin-bottom: 0.5rem;
+    }
+    footer p { font-family: 'DM Sans', sans-serif; margin: 0; }
+
+    /* ── BACK TO TOP ── */
+    #back-top {
+      position: fixed; bottom: 2rem; right: 2rem; z-index: 999;
+      width: 44px; height: 44px; border-radius: 50%;
+      background: var(--green-deep); color: #fff;
+      border: none; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 6px 20px rgba(30,80,50,0.3);
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.3s, transform 0.3s;
+    }
+    #back-top.show { opacity: 1; pointer-events: all; }
+    #back-top:hover { transform: scale(1.1); }
+
+    /* ── RESPONSIVE ── */
+    @media(max-width:768px) {
+      nav { padding: 0.8rem 1.2rem; }
+      .nav-links { display: none; }
+      main { padding: 0 1.2rem; }
+      .section { padding: 3.5rem 0; }
+      .cards-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div id="progress-bar"></div>
+
+<!-- NAV -->
+<nav id="navbar">
+  <div class="nav-logo">🐸 <span>Lưỡng Cư</span> Học</div>
+  <ul class="nav-links">
+    <li><a href="#khai-niem">Khái Niệm</a></li>
+    <li><a href="#moi-truong">Môi Trường</a></li>
+    <li><a href="#cac-loai">Các Loài</a></li>
+    <li><a href="#y-nghia">Ý Nghĩa</a></li>
+    <li><a href="#phan-biet">Phân Biệt</a></li>
+    <li><a href="#kham-pha">Khám Phá</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg-shapes">
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+    <div class="ripple"></div>
+  </div>
+  <div id="particles"></div>
+  <div class="hero-content">
+    <p class="hero-eyebrow">Khoa Học Tự Nhiên · Sinh Học Động Vật</p>
+    <h1 class="hero-title">
+      Động Vật Lưỡng Cư
+      <em>Trên Bờ & Dưới Nước</em>
+    </h1>
+    <div class="hero-divider">
+      <span></span>
+      <i>🌿</i>
+      <span></span>
+    </div>
+    <p class="hero-subtitle">
+      Khám phá thế giới kỳ diệu của những sinh vật sống cả trên cạn lẫn dưới nước — nhịp cầu tiến hóa nối liền đại dương và lục địa trong hàng triệu năm lịch sử.
+    </p>
+  </div>
+  <div class="scroll-hint">
+    <span>Cuộn xuống</span>
+    <svg viewBox="0 0 24 24" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+  </div>
+</section>
+
+<!-- MAIN -->
+<main>
+
+  <!-- KHÁI NIỆM -->
+  <section class="section" id="khai-niem">
+    <span class="section-tag">01 — Khái Niệm</span>
+    <h2 class="section-title">Lưỡng Cư là <em>gì</em>?</h2>
+    <p>
+      Động vật lưỡng cư (<i>Amphibia</i>) là lớp động vật có xương sống thuộc nhóm tetrapoda, được đặt tên từ tiếng Hy Lạp cổ <i>amphi</i> (cả hai) và <i>bios</i> (cuộc sống) — nghĩa đen là "hai cuộc sống". Đây là nhóm động vật có khả năng sống và hoạt động cả trên cạn lẫn dưới nước, tùy theo từng giai đoạn trong vòng đời.
+    </p>
+    <p>
+      Xuất hiện từ kỷ Devon cách đây khoảng 370 triệu năm, chúng là những sinh vật có xương sống đầu tiên thực hiện cuộc "chinh phục đất liền" từ đại dương — đóng vai trò quan trọng trong tiến hóa của toàn bộ các lớp động vật trên cạn sau này, bao gồm cả bò sát, chim và thú.
+    </p>
+
+    <div class="pull-quote">
+      <p>"Lưỡng cư là nhịp cầu tiến hóa quan trọng nhất trong lịch sử sự sống trên Trái Đất — chúng đã mạo hiểm bước ra khỏi đại dương và mở ra kỷ nguyên mới cho mọi sinh vật có xương sống."</p>
+    </div>
+
+    <div class="cards-grid">
+      <div class="card">
+        <div class="card-icon">🧬</div>
+        <div class="card-title">Phân loại học</div>
+        <p>Lớp Amphibia gồm khoảng 8.000 loài đã được mô tả, phân thành 3 bộ chính: Anura (ếch nhái), Urodela (kỳ nhông), và Gymnophiona (giun ếch không chân).</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🌡️</div>
+        <div class="card-title">Biến nhiệt</div>
+        <p>Chúng là động vật biến nhiệt (poikilotherm) — thân nhiệt thay đổi theo môi trường, không tự điều tiết nhiệt độ nội tại như thú và chim.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🫁</div>
+        <div class="card-title">Da thở được</div>
+        <p>Phần lớn lưỡng cư hô hấp qua da ẩm ướt (da thấm khí), cùng với phổi sơ khai. Da của chúng phải luôn ẩm để đảm bảo trao đổi khí hiệu quả.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🥚</div>
+        <div class="card-title">Trứng không vỏ cứng</div>
+        <p>Trứng lưỡng cư không có màng ối, phải đẻ trong môi trường nước hoặc nơi ẩm ướt. Ấu trùng (nòng nọc) sống hoàn toàn dưới nước trước khi biến thái.</p>
+      </div>
+    </div>
+
+    <div class="fact-box">
+      <div class="fact-box-title">🔢 Những con số ấn tượng</div>
+      <div class="fact-items">
+        <div class="fact-item">
+          <span class="fact-number">8.000+</span>
+          <div class="fact-label">Loài được mô tả</div>
+        </div>
+        <div class="fact-item">
+          <span class="fact-number">370 triệu</span>
+          <div class="fact-label">Năm tuổi (kỷ Devon)</div>
+        </div>
+        <div class="fact-item">
+          <span class="fact-number">40%</span>
+          <div class="fact-label">Loài đang bị đe dọa tuyệt chủng</div>
+        </div>
+        <div class="fact-item">
+          <span class="fact-number">3</span>
+          <div class="fact-label">Bộ phân loại chính</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MÔI TRƯỜNG SỐNG -->
+  <section class="section" id="moi-truong">
+    <span class="section-tag">02 — Môi Trường Sống</span>
+    <h2 class="section-title">Đất & Nước — <em>Hai Thế Giới</em></h2>
+    <p>
+      Điểm đặc trưng nhất của lưỡng cư là khả năng chinh phục cả hai môi trường khác biệt. Vòng đời của chúng thường trải qua hai giai đoạn rõ ràng: giai đoạn ấu trùng sống hoàn toàn dưới nước và giai đoạn trưởng thành có thể lên cạn hoạt động.
+    </p>
+
+    <ul class="habitat-list">
+      <li>
+        <span class="hab-icon">🌊</span>
+        <div>
+          <strong>Vùng nước ngọt (ao, hồ, sông, suối)</strong>
+          Môi trường sinh sản và phát triển ấu trùng chủ yếu. Nòng nọc hô hấp bằng mang, bơi lội và ăn tảo, vi sinh vật. Nhiều loài trưởng thành cũng sống bán thủy sinh ở đây suốt đời.
+        </div>
+      </li>
+      <li>
+        <span class="hab-icon">🌿</span>
+        <div>
+          <strong>Rừng nhiệt đới và cận nhiệt đới</strong>
+          Nơi phân bố đa dạng nhất của lưỡng cư thế giới. Độ ẩm cao, tán cây rậm rạp, nhiều côn trùng làm thức ăn — đây là thiên đường lý tưởng cho ếch, nhái cây và kỳ nhông.
+        </div>
+      </li>
+      <li>
+        <span class="hab-icon">🏔️</span>
+        <div>
+          <strong>Vùng núi và suối đầu nguồn</strong>
+          Nhiều loài kỳ nhông và ếch núi đặc hữu phân bố ở các con suối lạnh, trong vắt trên cao. Chúng thường rất nhạy cảm với ô nhiễm và là chỉ thị môi trường xuất sắc.
+        </div>
+      </li>
+      <li>
+        <span class="hab-icon">🏜️</span>
+        <div>
+          <strong>Vùng bán khô hạn (ít phổ biến)</strong>
+          Một số loài ếch sa mạc có thể sống trong điều kiện hạn hán cực đoan bằng cách đào hang ngủ đông nhiều tháng, chờ mưa xuống mới hoạt động và sinh sản.
+        </div>
+      </li>
+      <li>
+        <span class="hab-icon">🌾</span>
+        <div>
+          <strong>Đồng ruộng và vùng nông nghiệp</strong>
+          Ếch đồng, nhái, cóc là những cư dân quen thuộc của nông nghiệp nhiệt đới. Chúng giúp tiêu diệt sâu bọ, là thiên địch tự nhiên giá trị cao cho nông nghiệp.
+        </div>
+      </li>
+      <li>
+        <span class="hab-icon">🌳</span>
+        <div>
+          <strong>Môi trường trên cây (arboreal)</strong>
+          Nhiều loài ếch có chân hút như ếch bay (Rhacophorus), ếch mắt đỏ sống hoàn toàn trên tán cây, chỉ xuống đất/nước để đẻ trứng. Ngón chân giải phẫu đặc biệt giúp bám dính vào lá.
+        </div>
+      </li>
+    </ul>
+  </section>
+
+  <!-- CÁC LOÀI -->
+  <section class="section" id="cac-loai">
+    <span class="section-tag">03 — Các Loài</span>
+    <h2 class="section-title">Đa Dạng <em>Muôn Hình Vạn Trạng</em></h2>
+    <p>
+      Ba bộ lưỡng cư sở hữu hình thái và tập tính rất khác nhau, tạo nên sự đa dạng đáng kinh ngạc trong cùng một lớp động vật. Từ ếch nhỏ bé dưới 1cm đến những con kỳ nhông khổng lồ dài hơn 1,5 mét.
+    </p>
+
+    <div class="species-grid">
+      <div class="species-card frog">
+        <div class="species-emoji">🐸</div>
+        <div class="species-name">Bộ Anura — Ếch & Nhái</div>
+        <div class="species-latin">Rana, Bufo, Hyla, Rhacophorus...</div>
+        <p>Bộ lớn nhất với hơn 6.700 loài. Không có đuôi ở giai đoạn trưởng thành. Chi sau phát triển mạnh, thích nghi nhảy xa. Nòng nọc sống dưới nước, biến thái hoàn toàn. Đại diện: ếch đồng, nhái bén, cóc nhà, ếch bay Việt Nam.</p>
+      </div>
+      <div class="species-card toad">
+        <div class="species-emoji">🦎</div>
+        <div class="species-name">Cóc Nhà</div>
+        <div class="species-latin">Duttaphrynus melanostictus</div>
+        <p>Da sần sùi, dày hơn ếch, phân bố rộng khắp vùng nhiệt đới châu Á. Có tuyến mang tai sau mắt tiết chất độc bufotoxin để phòng vệ. Ăn côn trùng, là bạn của nhà nông.</p>
+      </div>
+      <div class="species-card salamander">
+        <div class="species-emoji">🦕</div>
+        <div class="species-name">Bộ Urodela — Kỳ Nhông & Sa Giông</div>
+        <div class="species-latin">Ambystoma, Salamandra, Andrias...</div>
+        <p>Có đuôi suốt đời. Khoảng 740 loài. Đi bộ thay vì nhảy. Nhiều loài có khả năng tái sinh tứ chi đáng kinh ngạc. Kỳ nhông khổng lồ Nhật Bản (<i>Andrias japonicus</i>) dài tới 1,5m là loài lưỡng cư lớn nhất còn sống.</p>
+      </div>
+      <div class="species-card caecilian">
+        <div class="species-emoji">🐍</div>
+        <div class="species-name">Bộ Gymnophiona — Giun Ếch</div>
+        <div class="species-latin">Caecilia, Ichthyophis, Dermophis...</div>
+        <p>Không có chân, hình dạng giống giun đất hoặc rắn nhỏ. Khoảng 200 loài, phân bố chủ yếu ở vùng nhiệt đới. Sống dưới đất hoặc dưới nước. Ít được nghiên cứu nhất trong 3 bộ. Có ở miền Nam Việt Nam.</p>
+      </div>
+    </div>
+
+    <p>Việt Nam là một trong những trung tâm đa dạng lưỡng cư của châu Á, với hơn 200 loài được ghi nhận, bao gồm nhiều loài đặc hữu quý hiếm:</p>
+
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Tên loài</th>
+          <th>Khu vực phân bố</th>
+          <th>Đặc điểm nổi bật</th>
+          <th>Tình trạng</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Ếch cây Việt Nam</td><td>Tây Nguyên, miền Trung</td><td>Da xanh lá, ngón chân giác bám</td><td>Ít lo ngại</td></tr>
+        <tr><td>Ếch bay (Rhacophorus reinwardtii)</td><td>Rừng nhiệt đới phía Nam</td><td>Màng da giữa ngón, lượn xa 10–15m</td><td>Sắp nguy cấp</td></tr>
+        <tr><td>Cóc mày sừng</td><td>Hoàng Liên Sơn</td><td>Sừng nhỏ trên mi mắt, da xù xì</td><td>Ít lo ngại</td></tr>
+        <tr><td>Ếch Quasipaa verrucospinosa</td><td>Bắc Việt Nam</td><td>Gai trên lưng sắc nhọn, sống ở suối núi</td><td>Nguy cấp</td></tr>
+        <tr><td>Cóc núi Ninia</td><td>Đặc hữu miền Bắc VN</td><td>Mới phát hiện, da sần, sống ở 1.200–1.800m</td><td>Dữ liệu thiếu</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- Ý NGHĨA -->
+  <section class="section" id="y-nghia">
+    <span class="section-tag">04 — Ý Nghĩa Sinh Thái</span>
+    <h2 class="section-title">Vai Trò Không Thể <em>Thiếu</em></h2>
+    <p>
+      Dù nhỏ bé và thường bị xem nhẹ, lưỡng cư đóng vai trò thiết yếu trong hệ sinh thái. Chúng là mắt xích trung gian quan trọng trong chuỗi thức ăn, đồng thời là chỉ thị sinh học cực kỳ nhạy cảm về sức khỏe môi trường.
+    </p>
+
+    <div class="importance-grid">
+      <div class="imp-card">
+        <div class="imp-icon">⚖️</div>
+        <div class="imp-title">Cân bằng chuỗi thức ăn</div>
+        <p>Là con mồi của rắn, chim, cá và là thiên địch của côn trùng, lưỡng cư đứng giữa hai tầng quan trọng trong hệ sinh thái, giữ sự cân bằng tự nhiên.</p>
+      </div>
+      <div class="imp-card">
+        <div class="imp-icon">🦟</div>
+        <div class="imp-title">Kiểm soát côn trùng</div>
+        <p>Một con ếch trưởng thành có thể ăn hàng nghìn con muỗi và sâu bọ mỗi năm. Chúng giúp giảm thiểu sâu hại mùa màng và dịch bệnh do côn trùng truyền.</p>
+      </div>
+      <div class="imp-card">
+        <div class="imp-icon">🔬</div>
+        <div class="imp-title">Chỉ thị môi trường</div>
+        <p>Da mỏng, thấm nước khiến lưỡng cư cực nhạy với ô nhiễm hóa chất, axit hóa nguồn nước và bức xạ UV. Sự suy giảm của chúng là tín hiệu cảnh báo sớm.</p>
+      </div>
+      <div class="imp-card">
+        <div class="imp-icon">💊</div>
+        <div class="imp-title">Nguồn dược liệu</div>
+        <p>Nhiều chất từ da lưỡng cư được nghiên cứu trong y học: opioid từ ếch Phyllomedusa, chất kháng khuẩn từ da kỳ nhông, peptide chống ung thư từ nhiều loài ếch nhiệt đới.</p>
+      </div>
+      <div class="imp-card">
+        <div class="imp-icon">🧪</div>
+        <div class="imp-title">Mô hình nghiên cứu khoa học</div>
+        <p>Xenopus laevis (ếch móng vuốt châu Phi) là sinh vật mô hình quan trọng trong sinh học phát triển, được dùng để nghiên cứu sự phát sinh phôi và biệt hóa tế bào.</p>
+      </div>
+      <div class="imp-card">
+        <div class="imp-icon">🌱</div>
+        <div class="imp-title">Phân hủy và tuần hoàn dinh dưỡng</div>
+        <p>Nòng nọc ăn tảo và mùn bã hữu cơ, góp phần dọn sạch nguồn nước và tuần hoàn chất dinh dưỡng trong hệ sinh thái thủy sinh.</p>
+      </div>
+    </div>
+
+    <!-- Threats Timeline -->
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.4rem; color:var(--green-deep); margin:2.5rem 0 1.5rem;">⚠️ Những Mối Đe Dọa Hiện Hữu</h3>
+    <div class="timeline">
+      <div class="timeline-item">
+        <div class="timeline-dot"></div>
+        <div class="timeline-label">Mối đe dọa #1</div>
+        <div class="timeline-title">Mất sinh cảnh và phân mảnh rừng</div>
+        <p>Đô thị hóa, nông nghiệp mở rộng phá hủy môi trường sống. Khi ao hồ, rừng đầu nguồn biến mất, lưỡng cư mất nơi sinh sản và kiếm ăn.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--teal);box-shadow:0 0 0 2px var(--teal)"></div>
+        <div class="timeline-label">Mối đe dọa #2</div>
+        <div class="timeline-title">Nấm chytrid (Batrachochytrium dendrobatidis)</div>
+        <p>Đại dịch nấm toàn cầu đã xóa sổ hơn 200 loài lưỡng cư trong vài thập kỷ qua — được coi là vụ tuyệt chủng do mầm bệnh lớn nhất trong lịch sử loài có xương sống.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:var(--water);box-shadow:0 0 0 2px var(--water)"></div>
+        <div class="timeline-label">Mối đe dọa #3</div>
+        <div class="timeline-title">Biến đổi khí hậu</div>
+        <p>Nhiệt độ tăng, mùa khô kéo dài làm thay đổi chu kỳ sinh sản. Nhiều loài phụ thuộc chặt chẽ vào thời điểm mưa để đẻ trứng và phát triển nòng nọc.</p>
+      </div>
+      <div class="timeline-item">
+        <div class="timeline-dot" style="background:#c0392b;box-shadow:0 0 0 2px #c0392b"></div>
+        <div class="timeline-label">Mối đe dọa #4</div>
+        <div class="timeline-title">Khai thác quá mức và buôn bán trái phép</div>
+        <p>Ếch đồng Việt Nam bị khai thác cạn kiệt làm thực phẩm và xuất khẩu. Nhiều loài ếch độc sặc sỡ bị bắt làm vật nuôi cảnh, đe dọa quần thể hoang dã.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- PHÂN BIỆT -->
+  <section class="section" id="phan-biet">
+    <span class="section-tag">05 — Phân Biệt</span>
+    <h2 class="section-title">Cách Nhận Biết <em>Từng Nhóm</em></h2>
+    <p>
+      Phân biệt các nhóm lưỡng cư không khó nếu bạn biết những đặc điểm hình thái chủ chốt. Dưới đây là tóm tắt các dấu hiệu nhận biết dễ quan sát nhất ngoài thực địa.
+    </p>
+
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--green-deep); margin:1.5rem 0 1rem;">🐸 Ếch (Frog) vs 🦎 Cóc (Toad)</h3>
+    <div class="id-grid">
+      <div class="id-card">
+        <div class="id-emoji">💧</div>
+        <div class="id-feature">Da</div>
+        <p>Ếch: da ẩm, trơn nhẵn. Cóc: da khô, sần sùi nhiều u mụn nhỏ</p>
+      </div>
+      <div class="id-card">
+        <div class="id-emoji">🦵</div>
+        <div class="id-feature">Chi sau</div>
+        <p>Ếch: chi sau rất dài, thích nghi nhảy cao xa. Cóc: chi ngắn hơn, thường bò đi hơn nhảy</p>
+      </div>
+      <div class="id-card">
+        <div class="id-emoji">💦</div>
+        <div class="id-feature">Môi trường ưa thích</div>
+        <p>Ếch: gần nước, ẩm ướt. Cóc: chịu được nơi khô hơn, thường thấy gần đèn điện tối</p>
+      </div>
+      <div class="id-card">
+        <div class="id-emoji">👁️</div>
+        <div class="id-feature">Mắt</div>
+        <p>Ếch: đồng tử ngang (hình hạt đậu). Cóc: mang tai to sau mắt, nổi rõ</p>
+      </div>
+      <div class="id-card">
+        <div class="id-emoji">🥚</div>
+        <div class="id-feature">Trứng</div>
+        <p>Ếch đẻ trứng thành đám/mảng. Cóc đẻ trứng thành dây dài cuộn như sợi chỉ dưới nước</p>
+      </div>
+      <div class="id-card">
+        <div class="id-emoji">🗣️</div>
+        <div class="id-feature">Âm thanh</div>
+        <p>Ếch kêu trong trẻo, to hơn. Cóc kêu trầm hơn, khàn khàn và ít hơn</p>
+      </div>
+    </div>
+
+    <h3 style="font-family:'Playfair Display',serif; font-size:1.2rem; color:var(--green-deep); margin:2rem 0 1rem;">🔍 Phân biệt Lưỡng Cư vs Bò Sát</h3>
+    <table class="compare-table">
+      <thead>
+        <tr>
+          <th>Đặc điểm</th>
+          <th>🐸 Lưỡng Cư</th>
+          <th>🦎 Bò Sát</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Da</td><td>Mỏng, ẩm, không vảy</td><td>Khô, có vảy hoặc tấm xương bì</td></tr>
+        <tr><td>Trứng</td><td>Không có màng ối, đẻ ở nước/ẩm</td><td>Có màng ối, đẻ trên cạn</td></tr>
+        <tr><td>Ấu trùng</td><td>Có giai đoạn nòng nọc sống dưới nước</td><td>Nở ra đã là con trưởng thành thu nhỏ</td></tr>
+        <tr><td>Hô hấp</td><td>Qua da + phổi (người trưởng thành)</td><td>Chỉ qua phổi</td></tr>
+        <tr><td>Nhiệt độ</td><td>Biến nhiệt, cần độ ẩm cao</td><td>Biến nhiệt, chịu khô hơn</td></tr>
+        <tr><td>Sống ở đâu</td><td>Gắn với nguồn nước để sinh sản</td><td>Hoàn toàn có thể sống trên cạn</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <!-- KHÁM PHÁ MỞ RỘNG -->
+  <section class="section" id="kham-pha">
+    <span class="section-tag">06 — Khám Phá Thêm</span>
+    <h2 class="section-title">Những Điều <em>Kỳ Diệu</em> Ít Ai Biết</h2>
+    <p>
+      Thế giới lưỡng cư ẩn chứa vô số bí ẩn và sự thật đáng kinh ngạc mà ngay cả các nhà khoa học vẫn đang tiếp tục khám phá. Dưới đây là một số điều thú vị nhất về nhóm động vật này.
+    </p>
+
+    <div class="curiosity-list">
+      <div class="curiosity-item">
+        <div class="curiosity-num">01</div>
+        <div class="curiosity-text">
+          <h4>🌈 Ếch độc đa sắc — Vũ khí sinh học tự nhiên</h4>
+          <p>Ếch độc mũi tên (Dendrobatidae) ở Nam Mỹ có màu sắc rực rỡ xanh, vàng, đỏ để cảnh báo thiên địch. Độc tố batrachotoxin từ da của chúng mạnh hơn morphine 100 lần và hiện được nghiên cứu để phát triển thuốc giảm đau thế hệ mới. Thú vị là chúng vô hại nếu nuôi nhốt — vì độc tố đến từ con mồi tự nhiên!</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">02</div>
+        <div class="curiosity-text">
+          <h4>🧊 Ếch gỗ — Đóng băng và hồi sinh</h4>
+          <p>Loài Rana sylvatica ở Bắc Mỹ có thể đóng băng hoàn toàn vào mùa đông — tim ngừng đập, máu ngừng chảy — và sống lại hoàn toàn khi tan băng vào xuân. Cơ chế chống đông sinh học của chúng đang được nghiên cứu ứng dụng trong bảo quản nội tạng ghép tạng.</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">03</div>
+        <div class="curiosity-text">
+          <h4>🔁 Kỳ nhông và khả năng tái sinh huyền thoại</h4>
+          <p>Kỳ nhông khoang (Ambystoma mexicanum — Axolotl) có thể tái sinh hoàn toàn chân, đuôi, một phần tim và thậm chí mô não. Đây là năng lực tái sinh phức tạp nhất từng được ghi nhận ở động vật có xương sống. Các nhà khoa học đang giải mã gene điều khiển quá trình này để ứng dụng trong y học tái sinh.</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">04</div>
+        <div class="curiosity-text">
+          <h4>🎵 Ngôn ngữ ếch — Phức tạp hơn bạn nghĩ</h4>
+          <p>Nhiều loài ếch không chỉ kêu một tiếng. Chúng có hệ thống âm thanh đa dạng: tiếng gọi bạn tình, tiếng cảnh báo lãnh thổ, tiếng kêu khi bị bắt và cả "tiếng thì thầm" tần số thấp để tránh bị thiên địch nghe thấy. Một số loài còn dùng rung động qua đất để giao tiếp.</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">05</div>
+        <div class="curiosity-text">
+          <h4>🧫 Chất tiết da — Kho tàng dược liệu</h4>
+          <p>Da lưỡng cư là nhà máy hóa chất tự nhiên phong phú: kháng sinh, peptide chống nấm, morphine tự nhiên, chất chống khối u. Hơn 300 peptide kháng khuẩn đã được phân lập từ da ếch, nhiều chất đang trong thử nghiệm lâm sàng điều trị kháng kháng sinh.</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">06</div>
+        <div class="curiosity-text">
+          <h4>🏛️ Lưỡng cư trong lịch sử và văn hóa</h4>
+          <p>Trong văn hóa Việt Nam, ếch và cóc gắn liền với mưa và nông nghiệp. Truyện dân gian "Cóc kiện Trời" phản ánh tín ngưỡng về cóc là "cậu ông trời". Ở châu Mỹ, thổ dân dùng độc từ ếch phi tiêu săn bắn. Tại Trung Quốc cổ đại, cóc vàng 3 chân là biểu tượng tài lộc, thịnh vượng.</p>
+        </div>
+      </div>
+      <div class="curiosity-item">
+        <div class="curiosity-num">07</div>
+        <div class="curiosity-text">
+          <h4>🌏 Bảo tồn — Những nỗ lực toàn cầu</h4>
+          <p>Chương trình "Amphibian Ark" đang nuôi nhốt hơn 60 loài lưỡng cư cực kỳ nguy cấp tại các vườn thú trên toàn thế giới. Tại Việt Nam, VQG Cúc Phương và Tam Đảo đang có những nỗ lực bảo tồn ếch đặc hữu. Nhiều loài mới vẫn được phát hiện ở Đông Dương mỗi năm.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="pull-quote">
+      <p>"Sự biến mất của lưỡng cư không chỉ là mất một loài sinh vật — đó là mất đi hàng triệu năm tiến hóa, mất đi những bí ẩn y học chưa được khám phá, và là lời cảnh báo cho sức khỏe của toàn bộ hệ sinh thái mà con người đang sống trong đó."</p>
+    </div>
+  </section>
+
+</main>
+
+<!-- FOOTER -->
+<footer>
+  <div class="ft-logo">🐸 Lưỡng Cư Học</div>
+  <p>Bài báo khoa học phổ thông · Sinh học động vật · Môi trường & Bảo tồn</p>
+  <br/>
+  <p style="font-size:0.75rem; opacity:0.4;">© 2025 · Được tạo ra với tình yêu dành cho thiên nhiên hoang dã</p>
+</footer>
+
+<button id="back-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Về đầu trang">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="18 15 12 9 6 15"/></svg>
+</button>
+
+<script>
+  // Progress bar
+  const bar = document.getElementById('progress-bar');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const pct = (window.scrollY / (h.scrollHeight - h.clientHeight)) * 100;
+    bar.style.width = pct + '%';
+  });
+
+  // Navbar scroll
+  const nav = document.getElementById('navbar');
+  const backTop = document.getElementById('back-top');
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 80) {
+      nav.classList.add('scrolled');
+      backTop.classList.add('show');
+    } else {
+      nav.classList.remove('scrolled');
+      backTop.classList.remove('show');
+    }
+  });
+
+  // Intersection Observer for sections
+  const sections = document.querySelectorAll('.section');
+  const obs = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) e.target.classList.add('visible');
+    });
+  }, { threshold: 0.08 });
+  sections.forEach(s => obs.observe(s));
+
+  // Staggered card animations
+  const cardObs = new IntersectionObserver((entries) => {
+    entries.forEach(entry => {
+      if (entry.isIntersecting) {
+        const cards = entry.target.querySelectorAll('.card, .species-card, .imp-card, .curiosity-item, .id-card');
+        cards.forEach((card, i) => {
+          card.style.opacity = '0';
+          card.style.transform = 'translateY(20px)';
+          setTimeout(() => {
+            card.style.transition = 'opacity 0.5s ease, transform 0.5s ease';
+            card.style.opacity = '1';
+            card.style.transform = 'translateY(0)';
+          }, i * 80);
+        });
+        cardObs.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+  document.querySelectorAll('.cards-grid, .species-grid, .importance-grid, .curiosity-list, .id-grid').forEach(el => cardObs.observe(el));
+
+  // Floating particles in hero
+  const particleContainer = document.getElementById('particles');
+  for (let i = 0; i < 20; i++) {
+    const p = document.createElement('div');
+    p.classList.add('particle');
+    const size = Math.random() * 8 + 3;
+    p.style.cssText = `
+      width:${size}px; height:${size}px;
+      left:${Math.random()*100}%;
+      bottom:${Math.random()*30}%;
+      animation-duration:${Math.random()*8+5}s;
+      animation-delay:${Math.random()*6}s;
+    `;
+    particleContainer.appendChild(p);
+  }
+
+  // Smooth nav link active highlight
+  const navLinks = document.querySelectorAll('.nav-links a');
+  window.addEventListener('scroll', () => {
+    let cur = '';
+    sections.forEach(s => {
+      if (window.scrollY >= s.offsetTop - 150) cur = s.id;
+    });
+    navLinks.forEach(a => {
+      a.style.color = a.getAttribute('href') === '#' + cur ? 'var(--green-mid)' : '';
+    });
+  });
+</script>
+</body>
+</html>
